@@ -1,3 +1,6 @@
+import math
+import matplotlib.pyplot as plt
+
 """
 the goal of the project is to calculate the energy yield in a basic way. with the formula
 P = 1/2*Cp*V^3*A
@@ -13,57 +16,81 @@ As the power is proportial to the wind speed power cube, the cubic interprolatio
 g(v) = WS^3/WSrp^3
 
 """
-#variable definition
-Pr= 15.0 #in MW that's the rated or maximum power of the turbine
-WSin=3.0 # in m/s where the rotor starts to spin
-WSrp=11.0 #in m/s where the wind speed is sufficient to reach rated power (15MW)
-WSout = 25.0 #in m/s turbine switch off at the wind speed because the wind speed is too strong.
-r = 118.0 # let s assume a 236m rotor diameter with r is the radius. 
-A = pi() * (r**2) #rotor swept area
-Cp = 0.45
+
+
+# -----------------------------
+# Turbine and wind data
+# -----------------------------
+Pr = 15.0      # rated power in MW
+WSin = 3.0     # cut-in wind speed (m/s)
+WSrp = 11.0    # rated wind speed (m/s)
+WSout = 25.0   # cut-out wind speed (m/s)
+r = 118.0      # rotor radius (m)
+Cp = 0.45      # power coefficient
+rho = 1.225    # air density (kg/m^3)
+
+A = math.pi * r**2  # swept rotor area
 
 # the ".0" behind each number is to indicate the value is a float number
 
+# -----------------------------
+# Power calculation
+# -----------------------------
+def turbine_power(v):
+    """
+    Calculate turbine output power in MW.
+    - Below cut-in (3m/s) or above cut-out (25m/s): 0 MW
+    - Between WSin (3m/s) and WSrp (11m/s): cubic increase to rated power
+    - Between WSrp (11m/s) and WSout (25m/s): rated power (15MW)
+    """
+    if v < WSin or v > WSout:
+        return 0.0
+    elif WSin <= v < WSrp:
+        # cubic interpolation to rated power
+        return (v / WSrp) ** 3 * Pr
+    else:
+        # at or above rated speed, keep rated power
+        return Pr
 
-x = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0]
-# x is the list of the wind speed in m/s from 0 to 26m/s where the power should work between 3 and 25m/s
-y = P 
 
-"""
-In theory we should have 3 functions:
-- one for Power P = 0 meaning where WS<WSin or WS>WSout
-- one for Power P= g(v)*Pr wich is the ramp up of the power curve between WSin and WSrp (rp as rated power)
-- one for Power Prated for WSrp<WS<WSout
-"""
-def add_two(x, y):
-  #calculate power between WSin and WSrp
-  return P= 0.5* A * Cp * x**3
-"""
-Docstring here.
-"""
-if x < WSin or x > WS out: 
-    P= 0
-elif x >= WSin and x < WSrp
-    P= (x**3/WSrp**3) * Pr
-else x =>WSrp and x <= WSout
-    P = Pr
- return y
-print ("The power P for the Wind Speed given is" y) 
+def aerodynamic_power(v):
+    """
+    Optional physical power formula:
+    P = 0.5 * Cp * rho * A * v^3
+    capped at rated turbine power.
+    """
+    if v < WSin or v > WSout:
+        return 0.0
+    p = 0.5 * Cp * rho * A * v**3
+    return min(p, Pr)  # power limited by turbine rating
 
-#plot(x, P) 
-"""
-# Add comment if needed.
-result = x + y # Add comment if needed.
-return result
-if __name__ == '__main__':
-# Write the main script to use the function here:
-x = 1
-y = 1
-# Add comments to explain if needed.
-z = add_two(x, y)
-print(f'x + y = {z}') # Add comment when needed
-"""
-"""
-The result should be the power curve as a plot. 
 
-"""
+# -----------------------------
+# Example usage
+# -----------------------------
+if __name__ == "__main__":
+    speeds = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0,
+              11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0,
+              20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0]
+
+    print("Wind speed (m/s)   Power (MW)")
+    for v in speeds:
+        p = turbine_power(v)
+        print(f"{v:>15.1f}      {p:>9.2f}")
+
+    # Optional: user input
+    user_speed = float(input("\nEnter wind speed in m/s: "))
+    print(f"Power at {user_speed} m/s is {turbine_power(user_speed):.2f} MW")
+
+    # -----------------------------
+    # Plot the power curve
+    # -----------------------------
+    x = [i / 10 for i in range(0, 261)]  # 0.0 to 26.0 m/s
+    y = [turbine_power(v) for v in x]
+
+    plt.plot(x, y, color="blue", linewidth=2)
+    plt.title("Wind Turbine Power Curve")
+    plt.xlabel("Wind speed (m/s)")
+    plt.ylabel("Power (MW)")
+    plt.grid(True)
+    plt.show()
